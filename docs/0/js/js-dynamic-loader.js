@@ -2,7 +2,9 @@ class JsDynamicLoader { // 非ESMでも動作するよう<script>タグ挿入す
     constructor(options=null) {
         this._options = options && 'object'===typeof options ? ({...this._defaultOptions, ...options}) : this._defaultOptions;
         this._basePath = this._options.basePath
-        this._paths = this._options.paths
+        //this._paths = this._options.paths
+        this.add(...(Array.isArray(this._options.paths) ? this._options.paths
+            : (this._options.paths instanceof Set ? [...this._options.paths] : [])))
         this._count = 0;
         this._CLASS_ID = 'js-dynamic-loader'; // <script class="${CLASS_ID}">
         console.log(this._options)
@@ -18,13 +20,15 @@ class JsDynamicLoader { // 非ESMでも動作するよう<script>タグ挿入す
     get basePath() {return this._options.basePath}
     set _basePath(v) {this._options.basePath = this.#delTailSlash(v)}
     get fullPaths() {return [...this._options.paths].map(p=>this.#joinPath(p))}
-    get loadedFullPaths() {return [...this._options.loadedFullPaths].map(p=>p)}
+    //get loadedFullPaths() {return [...this._options.loadedFullPaths].map(p=>p)}
+    get loadedFullPaths() {return this._options.loadedFullPaths}
     set _paths(v) {
         if (Array.isArray(v)){this._options.paths = new Set(v.map(V=>this.#delHeadSlash(V)))}
         else if (v instanceof Set){this._options.paths = new Set([...v].map(V=>this.#delHeadSlash(V)))}
     }
     set _onLoaded(v){if('function'===typeof v){this._options.onLoaded=v}}
     get isLoaded() {return this._count===this._options.paths.size}
+    //add(...paths) { for (let p of paths) { this._options.paths.add(this.#delHeadSlash(p)) } }
     add(...paths) { for (let p of paths) { this._options.paths.add(this.#delHeadSlash(p)) } }
     clear(isRemoveScript=false) { // isRemoveScript:読込済の<script>要素を削除する
         if (isRemoveScript) {
@@ -56,9 +60,12 @@ class JsDynamicLoader { // 非ESMでも動作するよう<script>タグ挿入す
     #onLoaded(e) {// 全ロード完了後に行う
         this._options.loadedFullPaths.add(e.target.src)
         this._options.onStepped(e)
-        if (this._count < this._languages.size) {return;}
-        this._options.onLoaded()
-        this.clear()
+        //if (this._count < this._options.paths.size) {return;}
+        console.log('isLoaded:', this.isLoaded)
+        if (this.isLoaded) {
+            this._options.onLoaded()
+            this.clear()
+        }
     }
     #createEl(path) {
         const script = document.createElement('script');
