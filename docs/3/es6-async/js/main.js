@@ -12,6 +12,36 @@ window.addEventListener('DOMContentLoaded', async(event) => {
 
 
     const a = new Assertion()
+    a.t(async()=>{ // 引数なし
+        const jdl = new JsAsyncDynamicLoader()
+        const results = await jdl.load()
+        console.log(results)
+        return 0===results.length
+    })
+    a.t(async()=>{ // 存在しないパス1件
+        try {
+            const jdl = new JsAsyncDynamicLoader()
+            const results = await jdl.load('./js/test-files/NO-EXIST.js')
+            return 1===results.length 
+            && 'rejected'===results[0].status
+            && 'reject'===results[0].reason.status
+            && './js/test-files/NO-EXIST.js'===results[0].reason.path
+        } catch (e) { console.error(e); return false; }
+    })
+    a.t(async()=>{ // 存在するパス1件
+        try {
+            a.f('someFn0' in window)
+            const jdl = new JsAsyncDynamicLoader()
+            const results = await jdl.load('./js/test-files/some-fn-0.js').catch(e=>console.error(e))
+            const test = 1===results.length 
+            && 'fulfilled'===results[0].status
+            && 'resolve'===results[0].value.status
+            && './js/test-files/some-fn-0.js'===results[0].value.path
+            && 'someFn0' in window
+            return test
+        } catch (e) { console.error(e); return false; }
+    })
+    /*
     // constructor()
     a.t(()=>{
         const jdl = new JsDynamicLoader()
@@ -285,37 +315,6 @@ window.addEventListener('DOMContentLoaded', async(event) => {
 
 
 
-
-    /*
-    // 二回に分けてロードし両方とも成功する
-    a.t(()=>{
-        const jdl = new JsDynamicLoader({basePath:'js/test-files'}) 
-        jdl.load((loadedFullPaths, failedFullPaths)=>{
-            console.log(loadedFullPaths)
-            console.log(failedFullPaths)
-            const test = 1 === jdl.loadedFullPaths.size && [...jdl.loadedFullPaths].some(p=>p.endsWith('js/test-files/some-fn-0.js'));
-            a.t(test); a.fin();
-        }, 'some-fn-0.js')
-        // 上記一回目のload()完了を待機できないため、以下二回目のload()では完了したファイルがまだ一回目分しか取得できていない…
-        // これを解決するには async/await を使った実装が必要である。
-        // またはコールバック地獄にするしかない。
-        jdl.load((loadedFullPaths, failedFullPaths)=>{
-            console.log(loadedFullPaths)
-            console.log(failedFullPaths)
-            const test = 2 === jdl.loadedFullPaths.size 
-                && [...jdl.loadedFullPaths].some(p=>p.endsWith('js/test-files/some-fn-0.js'))
-                && [...jdl.loadedFullPaths].some(p=>p.endsWith('js/test-files/some-fn-1.js'));
-            console.log(jdl.loadedFullPaths.size)
-            console.log(jdl.loadedFullPaths)
-            console.log([...jdl.loadedFullPaths])
-            console.log([...jdl.failedFullPaths])
-            console.log(jdl.loadedFullPaths.has('js/test-files/some-fn-0.js'))
-            console.log(jdl.loadedFullPaths.has('js/test-files/some-fn-1.js'))
-            a.t(test); a.fin();
-        }, 'some-fn-1.js')
-        return true
-    })
-    */
     // 二回に分けてload()する。前回の完了待ちをするとネスト地獄になる。
     a.t(()=>{
         const jdl = new JsDynamicLoader({basePath:'js/test-files'}) 
@@ -342,6 +341,7 @@ window.addEventListener('DOMContentLoaded', async(event) => {
         }, 'some-fn-0.js')
         return true
     })
+    */
     a.fin()
 });
 window.addEventListener('beforeunload', (event) => {

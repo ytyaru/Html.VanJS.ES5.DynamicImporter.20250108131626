@@ -9,7 +9,7 @@ class QueueState {
 }
 */
 class JsDynamicLoader { // 非ESMでも動作するよう<script>タグ挿入することで動的インポートする
-    static QueueState = new QueueState();
+//    static QueueState = new QueueState();
     constructor(options=null) {
         this._options = options && 'object'===typeof options ? ({...this._defaultOptions, ...options}) : this._defaultOptions;
         this._basePath = this._options.basePath
