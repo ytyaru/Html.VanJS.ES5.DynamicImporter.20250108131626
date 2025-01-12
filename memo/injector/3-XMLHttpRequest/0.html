@@ -1,0 +1,25 @@
+<script>
+window.addEventListener('DOMContentLoaded', async(event) => {
+    const xhr = new XMLHttpRequest();
+    console.log(xhr)
+    xhr.open('GET', 'some.csv');
+    xhr.responseType = 'text'; 
+    //xhr.withCredentials = true;
+    xhr.onload = function(event) {
+        console.log('LOAD:', event)
+        if(xhr.status === 200) {// 成功時の処理
+            console.log('Loaded File !!')
+        } else {// エラー時の処理
+            console.error(xhr.status)
+        }
+    }
+    xhr.onerror = function(event) {
+        console.log('ERROR:', event)
+    }
+    xhr.onprogress = function(event) {// 通信中の処理
+        console.log('PROGRESS:', event)
+    } 
+    xhr.send();
+});
+</script>
+
