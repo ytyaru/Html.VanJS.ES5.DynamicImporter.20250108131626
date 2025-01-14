@@ -1,0 +1,26 @@
+<meta charset="utf-8">
+<!-- polyfill -->
+<script type="text/javascript" src="../../../../../docs/lib/polyfill/promise/method/try.js"></script>
+<script type="text/javascript" src="../../../../../docs/lib/polyfill/promise/method/with-resolvers.js"></script>
+<script type="text/javascript" src="../../../../../docs/lib/polyfill/promise/method/allSettled.js"></script>
+<script type="text/javascript" src="common.js"></script>
+<script type="text/javascript" src="async-dynamic-loader.js"></script>
+<!-- async-dynamic-loader.js -->
+<!-- then-dynamic-loader.js -->
+<!-- callback-dynamic-loader.js -->
+<script type="text/javascript">
+window.addEventListener('DOMContentLoaded', async(event)=>{
+//const loader = DynamicLoader.get()
+const loader = new AsyncDynamicLoader((r)=>{console.log(`動的読込完了！`, r)}, (e)=>{console.error(`動的読込失敗…`, e)})
+//await loader.init('../../../../../docs/lib/polyfill/promise/method/')
+const paths = 'one two three'.split(' ').map(n=>`load-files/series/${n}.js`)
+await loader.series(...paths)
+console.assert('one' in window)
+console.assert('two' in window)
+console.assert('three' in window)
+console.assert(1===one())
+console.assert(2===two())
+console.assert(3===three())
+console.log('Finished !!')
+})
+</script>

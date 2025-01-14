@@ -1,0 +1,42 @@
+<script type="text/javascript" src="dynamic-loader.js"></script>
+<script type="text/javascript">
+window.addEventListener('DOMContentLoaded', function(event){
+    function onSucceeded(r) {
+        console.log('All Loaded !!');
+        console.assert('one' in window);
+        console.assert('two' in window);
+        console.assert('three' in window);
+        console.assert('function'===typeof one);
+        console.assert('function'===typeof two);
+        console.assert('function'===typeof trhee);
+        console.assert(1===one());
+        console.assert(2===one());
+        console.assert(3===one());
+    }
+    function onFailed(r) {console.error('Failed')}
+    function onFinally(r) {console.log('Finally')}
+    function onStepSucceeded(r) {console.log('Step Succeeded')}
+    function onStepFailed(r) {console.error('Step Failed')}
+    function onStepFinally(r) {console.log('Step Finally')}
+    var loader = new DynamicLoader({
+        onSucceeded: onSucceeded,
+        onFailed: onFailed,
+        onFinally: onFinally,
+        onStepSucceeded: onStepSucceeded,
+        onStepFailed: onStepFailed,
+        onStepFinally: onStepFinally,
+    })
+    function getPaths() {
+        var names = ['one','two','three'];
+        var paths = [];
+        for (var i=0; i<names.length; i++) {
+            paths.push('load-files/' + names[i] + '.js');
+        }
+        return paths;
+    }
+    loader.series(getPaths);
+//    loader.all(getPaths);
+//    loader.allSettled(getPaths);
+//    loader.race(getPaths);
+})
+</script>

@@ -45,14 +45,14 @@ window.addEventListener('DOMContentLoaded', (event) => {
     // 画面更新を停止する（パフォーマンス改善）
     
     // 動的ロード開始
-    injectJs('lib/some-0.js',
+    injectJs('load-lib/some-0.js',
     (e1)=>{
         console.log('1')
-        injectJs('lib/some-1.js',
+        injectJs('load-lib/some-1.js',
         (e2)=>{
             console.log('2')
             //injectCss('lib/some-0.css', // link要素にonloadがinされているのに機能しなかった。謎。
-            injectCssFallback('lib/some-0.css',
+            injectCssFallback('load-lib/some-0.css',
             (e3)=>{
                 // 動的ロード全件完了
                 console.log('3')
@@ -60,12 +60,18 @@ window.addEventListener('DOMContentLoaded', (event) => {
                 console.log(e1)
                 console.log(e2)
                 console.log(e3)
+                console.assert('some0' in window)
+                console.assert('some1' in window)
+                console.assert('function'===typeof some0)
+                console.assert('function'===typeof some1)
+                console.assert('some-0'===some0())
+                console.assert('some-1'===some1())
                 console.log(some0)
                 console.log(some1)
                 document.body.className = 'red'
                 document.body.innerText = 'All loaded !!'
-                console.log(document.querySelector('link'))
-
+                console.log([...document.querySelectorAll('link')])
+                console.log([...document.querySelectorAll('script')])
                 // 画面更新を再開する（パフォーマンス改善）
             },
             (e)=>{console.error(e)});

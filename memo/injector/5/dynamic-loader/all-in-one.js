@@ -1,3 +1,32 @@
+class Supported { // ブラウザに機能が実装されているか
+    constructor() {
+        this._hasPromise()
+        this._hasAsync()
+    }
+    get isPromise() { return this._isPromise }
+    get isAsync() { return this._isAsync }
+    _hasPromise() {
+        if ('undefined' === typeof Promise) {this._Promise=false}
+        if (-1 === Promise.toString().indexOf('[native code]')) {this._Promise=false}
+        this._Promise=true
+    }
+    _hasAsync() {
+        try { this._isAsync = eval(`typeof Object.getPrototypeOf(async function() {}).constructor === 'function'`); }
+        catch (exception) { this._isAsync = false; }
+    }
+}
+const Supported = new Supported;
+class DynamicLoader { // Async/Then/Callback のどれをロードするか決定する
+    static new(onSucceeded, onFailed) {
+        return new (this.class())(onSucceeded, onFailed)
+    }
+    static class() {
+        if (Supported.isPromise && Supported.isAsync) {return AsyncDynamicLoader}
+        else if (Supported.isPromise && !Supported.isAsync) {return ThenDynamicLoader}
+        else {return CallbackDynamicLoader}
+    }
+}
+
 class AsyncDynamicLoader {
     constructor(onSucceeded, onFailed) {
         this._onSucceeded = 'function'===onSucceeded ? onSucceeded : ()=>{};
@@ -327,24 +356,6 @@ class InjectRouter() { // 読み込むファイルの種別に応じたInjector�
         } else {return this._map.get(ext)}
     }
 }
-class Supported { // ブラウザに機能が実装されているか
-    constructor() {
-        this._hasPromise()
-        this._hasAsync()
-    }
-    get isPromise() { return this._isPromise }
-    get isAsync() { return this._isAsync }
-    _hasPromise() {
-        if ('undefined' === typeof Promise) {this._Promise=false}
-        if (-1 === Promise.toString().indexOf('[native code]')) {this._Promise=false}
-        this._Promise=true
-    }
-    _hasAsync() {
-        try { this._isAsync = eval(`typeof Object.getPrototypeOf(async function() {}).constructor === 'function'`); }
-        catch (exception) { this._isAsync = false; }
-    }
-}
-const Supported = new Supported;
 class PromiseMaker {
     make(...paths) {
         if (Supported.isPromise) {
