@@ -64,12 +64,14 @@ class AsyncDynamicLoader {
             }, Promise.resolve());
             */
             for (const path of paths) {
-                console.log(path)
-                console.log(this._emr.get(path))
-                const promise = this._emr.get(path).make(path, this._onStepSucceeded, this._onStepFailed);
-                console.log(promise)
-                await promise;
-                console.log(promise)
+                try {
+                    console.log(path)
+                    console.log(this._emr.get(path))
+                    const promise = this._emr.get(path).make(path, this._onStepSucceeded, this._onStepFailed);
+                    console.log(promise)
+                    await promise;
+                    console.log(promise)
+                } catch (err) {console.error(err)}
             }
             //console.log(promises)
             this._onSucceeded(...paths)

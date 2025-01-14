@@ -85,7 +85,8 @@ class ElementMakerRouter { // 読み込むファイルの種別に応じたMaker
         if (!this._map.has(ext)) {
             console.warn(`拡張子 ${ext} は動的読込できません。${[...this._map.keys()]}のいずれかのみ動的読込できます。次のファイルの読込はしません。:${path}`);
             return null
-        } else {return this._map.get(ext)}
+        //} else {return this._map.get(ext)}
+        } else {console.log('ElementMakerRouter.get():', this._map.get(ext));return this._map.get(ext)}
     }
     select(type) {
         if (DynamicLoader.Supported.isPromise) {return [
@@ -118,9 +119,17 @@ class CallbackLinkElementMaker { // ES5で作り直した版も欲しい
         this._type = this.getType(type)
         this._makers = {'img.onerror':null,'link.onload':null}
     }
-    make(path, resolver, rejector) { return getMaker().make(path, resolver, rejector) }
+    make(path, resolver, rejector) { return this.getMaker().make(path, resolver, rejector) }
     getMaker() {
-        if (!this._makers[this._type]) { this._makers[this._type] = Reflect.construct(this.selectMaker()) }
+        if (!this._makers[this._type]) { this._makers[this._type] = Reflect.construct(this.selectMaker(), []) }
+        //if (!this._makers[this._type]) { this._makers[this._type] = Reflect.construct(this.selectMaker()) }
+        /*
+        if (!this._makers[this._type]) {
+            this._makers[this._type] = 
+                Reflect.construct(
+                    this.selectMaker()) }
+        */
+        console.log(this._makers[this._type])
         return this._makers[this._type]
     }
     selectMaker() { return 'link.onload'===this._type ? CallbackOnLoadLinkElementMaker : CallbackImgOnErrorLinkElementMaker; }
@@ -147,6 +156,7 @@ class CallbackImgOnErrorLinkElementMaker {// ES5で作り直した版も欲し�
     // https://www.viget.com/articles/js-201-run-a-function-when-a-stylesheet-finishes-loading/
     // https://qiita.com/rana_kualu/items/95a7adf8420ea2b9f657
     make(src, resolver, rejector) {
+        console.log('CallbackImgOnErrorLinkElementMaker.make()')
         const link = document.createElement('link');
         link.href = src
         link.rel = 'stylesheet'
@@ -189,10 +199,10 @@ class PromiseScriptElementMaker extends CallbackScriptElementMaker {
     make(path, onLoad, onError) {
         return new Promise((resolve, reject)=>{
             try {
-//                const onload = (e)=>resolve({ status:'resolve', path:path, event:e });
-//                const onerror = (e)=>reject({ status:'reject', path:path, event:e });
-                const onLoad = (e)=>{console.log('onloadDDDDDDDDDD', e, path);resolve({ status:'resolve', path:path, event:e })};
-                const onError = (e)=>{console.error('onErrorRRRRRRRR', e, path);reject({ status:'reject', path:path, event:e })};
+                const onLoad = (e)=>resolve({ status:'resolve', path:path, event:e });
+                const onError = (e)=>reject({ status:'reject', path:path, event:e });
+//                const onLoad = (e)=>{console.log('onloadDDDDDDDDDD', e, path);resolve({ status:'resolve', path:path, event:e })};
+//                const onError = (e)=>{console.error('onErrorRRRRRRRR', e, path);reject({ status:'reject', path:path, event:e })};
                 const el = super.makeBase(path, onLoad, onError)
                 console.log(el)
                 DynamicLoader.Injector.inject(el)
@@ -204,12 +214,26 @@ class PromiseLinkElementMaker extends CallbackLinkElementMaker {
     constructor(type='img.onerror') { super(type) }
     make(path, onSucceeded, onFailed) {
        return new Promise((resolve, reject)=>{
-            const onLoad = (e)=>resolve({ status:'resolve', path:path, event:e });
-            const onError = (e)=>reject({ status:'reject', path:path, event:e });
-            const els = super.make(path, onLoad, onError)
-            els.ForEach(el=>DynamicLoader.Injector.inject(el))
+            try {
+//                const onLoad = (e)=>resolve({ status:'resolve', path:path, event:e });
+//                const onError = (e)=>reject({ status:'reject', path:path, event:e });
+/*
+                const delImg = ()=>{
+                    for (let el of document.querySelectorAll('img.dynamic-loader')) {
+                        el.remove();
+                    }
+                }
+*/                
+                const onLoad = (e)=>{console.log('onLoad:', e);resolve({ status:'resolve', path:path, event:e });this.delImg.apply(this);};
+                const onError = (e)=>{console.error('onError:',e);reject({ status:'reject', path:path, event:e });this.delImg.apply(this);};
+                const els = super.make(path, onLoad, onError)
+                console.log(els)
+//                els.ForEach(el=>DynamicLoader.Injector.inject(el))
+                els.map(el=>DynamicLoader.Injector.inject(el))
+            } catch (err) {reject({ status:'exception', path:path, event:err })}
         })
     }
+    delImg() { for (let el of document.querySelectorAll('img.dynamic-loader')) { el.remove(); } }
 }
 
 //DynamicLoader.Supported = Supported;
