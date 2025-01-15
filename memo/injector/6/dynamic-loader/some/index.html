@@ -1,0 +1,14 @@
+<script>
+console.log('START')
+async function wait(second) {return new Promise(resolve=>setTimeout(resolve, 1000 * second));}
+class C {
+    constructor() {
+        (async function(){
+            await wait(2)
+        })();
+        console.log('OK')
+    }
+}
+new C()
+console.log('END')
+</script>

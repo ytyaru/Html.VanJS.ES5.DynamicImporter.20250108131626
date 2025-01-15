@@ -1,0 +1,21 @@
+<script>
+(async function() {
+    console.log('START')
+    //async function wait(second) {return new Promise(resolve=>setTimeout(resolve, 1000 * second));}
+    async function wait(second) {
+        //return new Promise(resolve=>setTimeout(()=>{console.log(`wait ${second}s`);resolve();}, 1000 * second));
+        return new Promise(resolve=>{console.log(`start wait ${second}s`);return setTimeout(()=>{console.log(`wait ${second}s`);resolve();}, 1000 * second)});
+    }
+//    const waits = [wait(2), wait(7), wait(2), wait(2), wait(2), wait(2), wait(2), wait(2), wait(5)]
+    try {
+//        for (const w of waits) {await w}
+        await [2, 5, 3, 1, 5, 1, 2].reduce(async (acc, cur) => {
+            await acc;
+            return wait(cur);
+        }, Promise.resolve());
+        console.log('Finished')
+//        await Promise.all()
+    } catch(err) {console.error(err)}
+})();
+</script>
+
