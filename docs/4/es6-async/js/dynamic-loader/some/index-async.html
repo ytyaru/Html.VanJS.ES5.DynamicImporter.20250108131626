@@ -1,0 +1,16 @@
+<script>
+(async function() {
+    console.log('START')
+    async function wait(second) {return new Promise(resolve=>setTimeout(resolve, 1000 * second));}
+    class C {
+        async constructor() { // SyntaxError: Class constructor may not be an async method
+        //constructor() {
+            (async function(){ await wait(2) })();
+            //await wait(2); // SyntaxError: await is only valid in async functions and the top level bodies of modules
+            console.log('OK')
+        }
+    }
+    new C()
+    console.log('END')
+})();
+</script>
