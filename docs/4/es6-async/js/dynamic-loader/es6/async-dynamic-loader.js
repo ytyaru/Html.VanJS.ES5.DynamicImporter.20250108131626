@@ -9,16 +9,38 @@ class AsyncDynamicLoader {
         this._onStepFinally = 'function'===typeof onStepFinally ? onStepFinally : (e)=>{};
         this._emr = new DynamicLoader._.ElementMakerRouter()
     }
+    /*
     async load(dependencies) {
-
+        let method = 'series';
+        let items = null;
+        const promises = []
+        for (let depend of dependencies) {
+            promises.push(this.#load(method, items))
+        }
+        const promise = this._emr.get(path).make(path, this._onStepSucceeded, this._onStepFailed);
     }
+    async #load(method, items) {
+        return this[method](...items)
+    }
+    */
+    async series(...paths) { // 全件を直列に読み込む
+        try {
+            const promises = this.#getPromises(...paths)
+            for (const promise of promises) { await promise; }
+            this._onSucceeded(...paths)
+        } catch (err) { this._onFailed(err, ...paths); }
+        finally {this._onFinally()}
+    }
+
+    /*
     async series(...paths) { // 全件を直列に読み込む
         try {
             for (const path of paths) {
                 try {
                     console.log(path)
                     console.log(this._emr.get(path))
-                    const promise = this._emr.get(path).make(path, this._onStepSucceeded, this._onStepFailed);
+                    //const promise = this._emr.get(path).make(path, this._onStepSucceeded, this._onStepFailed);
+                    const promises = this.#getPromises(...paths)
                     console.log(promise)
                     await promise;
                     console.log(promise)
@@ -28,6 +50,7 @@ class AsyncDynamicLoader {
         } catch (err) { this._onFailed(err, ...paths); }
         finally {this._onFinally()}
     }
+    */
     async all(...paths) {// 全件を並列に読み込む（一件でもエラーがあればその時点で中断する）
         try {
             const promises = this.#getPromises(...paths)

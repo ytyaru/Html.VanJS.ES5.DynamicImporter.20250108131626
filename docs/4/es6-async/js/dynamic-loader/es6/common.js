@@ -26,25 +26,132 @@ class DynamicLoader { // Async/Then/Callback のどれをロードするか決�
         else if (Supported.isPromise && !Supported.isAsync) {return ThenDynamicLoader}
         else {return CallbackDynamicLoader}
     }
+    static load(dependencies) {
+
+    }
 }
 class Dependencies {
-    series(...items) {
-//        return [...items].map()
-    }
-    allSettled(...items) {
-
-    }
-    all(...items) {
-
-    }
-    race(...items) {
-
-    }
+    series(...items) { return this._make('series', [...items]) }
+    allSettled(...items) { return this._make('allSettled', [...items]) }
+    all(...items) { return this._make('all', [...items]) }
+    race(...items) { return this._make('race', [...items]) }
     _make(method, items) { return {
         method: method,
         items: items
     } }
 }
+
+/*
+const pm = PromiseMaker()
+const hljs = Promise.series(pm.series(corePaths), pm.all([...jsPaths, ...cssPaths]))
+const some = Promise.series(pm.series(corePaths), pm.all([...jsPaths, ...cssPaths]))
+cosnt all = await Promise.allSettled(hljs, some)
+*/
+/*
+async function loadHljs() {
+  const core = DynamicLoader.getPromise('core.js')
+  const langs = DynamicLoader.getPromise(...['js','css','xml'].map(n=>`languages/${n}.min.js`)
+  const styles = DynamicLoader.getPromise(...['light','dark'].map(n=>`styles/a11-${n}.min.css`)
+  await DynamicLoader.load(core, Promise.all([...langs, ...styles]))
+}
+*/
+/*
+class HljsLoader {
+  constructor() {
+    this._baseUrl = 'highlight.js/11.10.0/';
+    this._loadMap = new Map([
+      ['core', null],
+      ['languages/', new Set()],
+      ['styles/', new Set()],
+    ]);
+    this._dependencies = DynamicLoader.Dependencies.series();
+  }
+  async load(langs, styles) {
+    DynamicLoader.load(this.getDepend(langs, styles), {
+      onStepSucceeded:(path)=>{
+        if ('highlight.min.js'===path) {this._loadMap.set('core', path)}
+        else if (path.includes('languages/')) {
+          const parts = path.split('/')
+          const fileName = parts.slice(-1)[0]
+//          const langName = fileName.split('.').slice(0, -1).join('.')
+//          this._loadMap.set('languages/', langName)
+          this._loadMap.set('languages/', fileName)
+        }
+      },
+    })
+    if ()
+  }
+  getDepend(langs, styles) {
+    //const depend = DynamicLoader.Dependencies.series(Promise.series(['core.js']), Promise.all(langs), Promise.all(styles));
+    const list = []
+    if (!this._loadMap.get('core')) {list.push('highlight.min.js')}
+    const L = langs.filter(l=>!this._loadMap.has(l))
+    const S = styles.filter(s=>!this._loadMap.has(s))
+    const LS = [...(new Set([...L, ...S]))]
+    if (0 < LS.length) {list.push(Promise.allSettled(LS)}
+    return DynamicLoader.Dependencies.series(...list);
+    //const depend = DynamicLoader.Dependencies.series('core.js', Promise.allSettled(langs), Promise.allSettled(styles));
+  }
+}
+*/
+class PromiseMaker {
+    constructor(onSucceeded, onFailed, onFinally, onStepSucceeded, onStepFailed, onStepFinally) {
+        this._onSucceeded = 'function'===typeof onSucceeded ? onSucceeded : ()=>{};
+        this._onFailed = 'function'===typeof onFailed ? onFailed : ()=>{};
+        this._onFinally = 'function'===typeof onFinally ? onFinally : ()=>{};
+        this._onStepSucceeded = 'function'===typeof onStepSucceeded ? onStepSucceeded : (res)=>{};
+        this._onStepFailed = 'function'===typeof onStepFailed ? onStepFailed : (e)=>{};
+        this._onStepFinally = 'function'===typeof onStepFinally ? onStepFinally : (e)=>{};
+        this._emr = new DynamicLoader._.ElementMakerRouter()
+    }
+    async series(paths) { return new Promise(async(resolve, reject)=>{
+        try {
+            for (const path of paths) {
+                //const promise = this._emr.get(path).make(path, this._onStepSucceeded, this._onStepFailed);
+                const promises = this.#getPromises(...paths);
+                await promise;
+            }
+            //this._onSucceeded(res, ...paths)
+            resolve(paths);
+//        } catch (err) {reject(err)}
+        } catch (err) {this._onFailed(err, ...paths);reject(err, paths);}
+    }); }
+    async all(paths) { return new Promise(async(resolve, reject)=>{// 全件を並列に読み込む（一件でもエラーがあればその時点で中断する）
+        try {
+            const promises = this.#getPromises(...paths);
+            const res = await Promise.all(promises);
+            //this._onSucceeded(res, ...paths)
+            resolve(paths, res);
+        //} catch (err) { reject(err) }
+        } catch (err) { this._onFailed(err, ...paths); reject(err, paths); }
+        //finally {this._onFinally()}
+    }); }
+    async allSettled(paths) { return new Promise(async(resolve, reject)=>{// 全件を並列に読み込む（エラーがあっても全件実行する）
+        try {
+            const promises = this.#getPromises(...paths);
+            const results = await Promise.allSettled(promises);
+            for (let result of results) {
+                if ('fulfilled'===reuslt.status) {this._onStepSucceeded(result)}
+                else if ('rejected'===reuslt.status) {this._onStepFailed(result)}
+            }
+            this._onSucceeded(results, ...paths)
+            resolve(paths, results);
+        } catch (err) { this._onFailed(err, ...paths); reject(err, paths); }
+        finally {this._onFinally()}
+    }); }
+    async race(paths) { return new Promise(async(resolve, reject)=>{// 全件を並列に読み込む（最初に一件解決した時点で中断する）
+        try {
+            const promises = this.#getPromises(...paths);
+            const res = await Promise.race(promises);
+            this._onSucceeded(res, ...paths)
+            resolve(paths, res);
+        } catch (err) { this._onFailed(err, ...paths); reject(err, paths); }
+        finally {this._onFinally()}
+    }); }
+    #getPromises(...paths) {return [...paths].map(path=>this._emr.get(path).make(path,this._onStepSucceeded, this._onStepFailed))}
+}
+
+
 class Injector { // 指定した要素を所定の箇所に挿入する
     inject(el) {
         const parent = this.getParent(el);
@@ -178,6 +285,7 @@ class PromiseLinkElementMaker extends CallbackLinkElementMaker {
     delImg() { for (let el of document.querySelectorAll('img.dynamic-loader')) { el.remove(); } }
 }
 
+DynamicLoader.d = new Dependencies();
 //DynamicLoader.Supported = Supported;
 DynamicLoader._ = {};
 DynamicLoader._.Injector = new Injector();
